@@ -7,33 +7,38 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"text/template"
 
+	"github.com/n3integration/conseil"
 	"github.com/pkg/errors"
+
 	"gopkg.in/urfave/cli.v1"
 )
 
 var (
+	wd        string
 	driver    string
 	framework string
 	host      string
 	port      int
 
-	dep bool
-	git bool
+	dep        bool
+	git        bool
+	migrations bool
 )
 
 func init() {
 	register(cli.Command{
-		Name:    "app",
-		Aliases: []string{"a"},
+		Name:    "new",
+		Aliases: []string{"n"},
 		Usage:   "bootstrap a new application",
 		Action:  appAction,
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:        "framework",
 				Value:       "gin",
-				Usage:       "web framework",
+				Usage:       fmt.Sprintf("app framework [i.e. %v]", strings.Join(listApps(), ", ")),
 				Destination: &framework,
 			},
 			cli.StringFlag{
@@ -47,6 +52,11 @@ func init() {
 				Value:       8080,
 				Usage:       "local port to bind",
 				Destination: &port,
+			},
+			cli.BoolFlag{
+				Name:        "migrations",
+				Destination: &migrations,
+				Usage:       "whether or not to include support for database migrations",
 			},
 			cli.StringFlag{
 				Name:        "driver",
@@ -78,23 +88,29 @@ type Context struct {
 	Import string
 }
 
-func appAction(c *cli.Context) error {
+func appAction(_ *cli.Context) error {
+	if wd == "" {
+		wd = "."
+	}
+
 	templates := parseTemplates()
 	if err := createWebApp(templates); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	if err := stageMigrations(templates); err != nil {
-		log.Fatal(err)
-	}
+	if migrations {
+		if err := stageMigrations(templates); err != nil {
+			return err
+		}
 
-	if err := setupDb(templates); err != nil {
-		log.Fatal(err)
+		if err := setupDb(templates); err != nil {
+			return err
+		}
 	}
 
 	if dep {
 		if out, err := depInit(); err != nil {
-			log.Fatal(err)
+			return err
 		} else {
 			log.Println(out)
 		}
@@ -102,7 +118,7 @@ func appAction(c *cli.Context) error {
 
 	if git {
 		if out, err := gitInit(templates); err != nil {
-			log.Fatal(err)
+			return err
 		} else {
 			log.Println(out)
 		}
@@ -112,13 +128,14 @@ func appAction(c *cli.Context) error {
 }
 
 func createWebApp(templates *template.Template) error {
-	t := templates.Lookup(fmt.Sprintf("templates/rest/%s.tpl", framework))
+	t := templates.Lookup(fmt.Sprintf("templates/app/%s.tpl", framework))
 	if t == nil {
-		return errors.Errorf("unable to find a '%s' web framework template", framework)
+		return errors.Errorf("unable to find a '%s' app framework template", framework)
 	}
-	app, err := os.Create("app.go")
+
+	app, err := os.Create(filepath.Join(wd, "app.go"))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	log.Println("creating app...")
@@ -126,11 +143,25 @@ func createWebApp(templates *template.Template) error {
 		Host: host,
 		Port: port,
 	}
-	return t.Execute(app, context)
+
+	if err := t.Execute(app, context); err != nil {
+		return err
+	}
+
+	if framework == "grpc" {
+		path := filepath.Join(wd, "proto")
+		if err := os.MkdirAll(path, 0755); err != nil {
+			return err
+		}
+
+		_, err := os.Create(filepath.Join(path, "rpc.proto"))
+		return err
+	}
+	return nil
 }
 
 func stageMigrations(templates *template.Template) error {
-	path := "sql/migrations"
+	path := filepath.Join(wd, "sql/migrations")
 	log.Println("staging migrations...")
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return err
@@ -146,10 +177,20 @@ func stageMigrations(templates *template.Template) error {
 }
 
 func setupDb(templates *template.Template) error {
-	sql, _ := os.Create(filepath.Join("sql", "sql.go"))
+	dbConn, err := conn(driver)
+	if err != nil {
+		return err
+	}
+
+	path := filepath.Join(wd, "sql")
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return err
+	}
+
+	sql, _ := os.Create(filepath.Join(path, "sql.go"))
 	context := &Context{
 		Driver: driver,
-		Conn:   conn(driver),
+		Conn:   dbConn,
 		Import: imp(driver),
 	}
 	return templates.Lookup("templates/sql/sql.tpl").Execute(sql, context)
@@ -169,7 +210,7 @@ func depInit() (string, error) {
 
 func gitInit(templates *template.Template) (string, error) {
 	t := templates.Lookup("templates/gitignore.tpl")
-	ign, _ := os.Create(".gitignore")
+	ign, _ := os.Create(filepath.Join(wd, ".gitignore"))
 	wd, _ := os.Getwd()
 
 	context := &Context{
@@ -191,19 +232,34 @@ func gitInit(templates *template.Template) (string, error) {
 	return fmt.Sprintf("%s\n", bytes.TrimSpace(output)), nil
 }
 
-func conn(driver string) string {
+func conn(driver string) (string, error) {
 	wd, _ := os.Getwd()
 	switch driver {
 	case "postgres":
-		return fmt.Sprintf("postgres://localhost:5432/%s", filepath.Base(wd))
+		return fmt.Sprintf("postgres://localhost:5432/%s", filepath.Base(wd)), nil
+	case "sqlite3":
+		return fmt.Sprintf("file:%s.sqlite", filepath.Base(wd)), nil
 	}
-	return fmt.Sprintf("file://%s", filepath.Base(wd))
+	return "", fmt.Errorf("%s is not a supported database driver", driver)
 }
 
 func imp(driver string) string {
 	switch driver {
 	case "postgres":
 		return "github.com/lib/pq"
+	case "sqlite3":
+		return "github.com/mattn/go-sqlite3"
 	}
-	return "github.com/mattn/go-sqlite3"
+	return ""
+}
+
+func listApps() []string {
+	appList := make([]string, 0)
+	for _, app := range conseil.AssetNames() {
+		if strings.HasPrefix(app, "templates/app/") {
+			base := filepath.Base(app)
+			appList = append(appList, strings.Replace(base, ".tpl", "", 1))
+		}
+	}
+	return appList
 }

@@ -1,0 +1,29 @@
+//go:generate protoc proto/rpc.proto --go_out=plugins=grpc:.
+package main
+
+import (
+  "log"
+  "net"
+
+  "google.golang.org/grpc"
+  "google.golang.org/grpc/reflection"
+)
+
+func main() {
+  // Create new server
+  srv := grpc.NewServer()
+
+  // Register protobuf service with server
+  // pb.RegisterXXXServer(srv, &pb.Server{})
+
+  reflection.Register(srv)
+
+  lis, err := net.Listen("tcp", net.JoinHostPort("localhost", "9000"))
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  // Now listening on: http://localhost:9000
+  // Application started. Press CTRL+C to shut down.
+  srv.Serve(lis)
+}

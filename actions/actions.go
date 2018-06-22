@@ -1,45 +1,39 @@
 package actions
 
 import (
-	"log"
 	"strings"
 	"sync"
 	"text/template"
 
 	"gopkg.in/urfave/cli.v1"
 
-	"github.com/n3integration/goji"
+	"github.com/n3integration/conseil"
 )
-
-func init() {
-	log.SetFlags(0)
-	log.SetPrefix("[goji] ")
-}
-
-func Commands() []cli.Command {
-	return registry.actions
-}
 
 var registry = struct {
 	actions []cli.Command
-	sync.Mutex
+	mu      sync.Mutex
 }{
 	actions: make([]cli.Command, 0),
 }
 
 func register(command cli.Command) {
-	registry.Lock()
-	defer registry.Unlock()
+	registry.mu.Lock()
+	defer registry.mu.Unlock()
 
 	registry.actions = append(registry.actions, command)
 }
 
+func GetCommands() []cli.Command {
+	return registry.actions
+}
+
 func parseTemplates() *template.Template {
 	templates := template.New("t")
-	for _, f := range goji.AssetNames() {
+	for _, f := range conseil.AssetNames() {
 		if strings.HasSuffix(f, ".tpl") {
 			templates = templates.New(f)
-			templates.Parse(string(goji.MustAsset(f)))
+			templates.Parse(string(conseil.MustAsset(f)))
 		}
 	}
 	return templates
