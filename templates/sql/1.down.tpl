@@ -1,0 +1,4 @@
+-- Place SQL statements that are used to revert the database schema migration
+-- within this file. Subsequent schema migration rollbacks should be placed
+-- within a n.down.sql file, where n increments a sequence number beginning
+-- with 1.
