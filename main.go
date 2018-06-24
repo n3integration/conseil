@@ -1,2 +1,3 @@
 //go:generate go-bindata -o templates.go templates/...
+//go:generate sed -i .bak "s/main/goji/" templates.go
 package goji

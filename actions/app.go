@@ -23,19 +23,10 @@ var (
 	git bool
 )
 
-type Context struct {
-	App    string
-	Host   string
-	Port   int
-	Driver string
-	Conn   string
-	Import string
-}
-
 func init() {
 	register(cli.Command{
-		Name:    "new",
-		Aliases: []string{"n"},
+		Name:    "app",
+		Aliases: []string{"a"},
 		Usage:   "bootstrap a new application",
 		Action:  appAction,
 		Flags: []cli.Flag{
@@ -75,6 +66,16 @@ func init() {
 			},
 		},
 	})
+}
+
+// Context provides the application context options
+type Context struct {
+	App    string
+	Host   string
+	Port   int
+	Driver string
+	Conn   string
+	Import string
 }
 
 func appAction(c *cli.Context) error {
