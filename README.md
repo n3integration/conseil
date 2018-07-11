@@ -18,7 +18,8 @@ go get -u github.com/n3integration/conseil
 
 When bootstrapping a new Go application, there are multiple steps
 that are required for each project. Use the `new` command to build
-out the application scaffolding for a new application.
+out the application scaffolding for a new application including:
+git repo, dependency management, etc.
 
 ```sh
 NAME:
