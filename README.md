@@ -9,7 +9,7 @@ when updates are available.
 
 ```sh
 go get -u github.com/n3integration/conseil
-
+go install github.com/n3integration/conseil/cmd/conseil
 ```
 
 ## Usage
