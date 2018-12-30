@@ -1,19 +1,31 @@
 package sql
 
 import (
-	"database/sql"
+    "database/sql"
 
-	_ "{{ .Import }}"
+    _ "{{ .Import }}"
 )
 
 var db *sql.DB
 
-func init() {
-	var err error
-	db, err = sql.Open("{{ .Driver }}", "{{ .Conn }}")
-	if err != nil {
-		panic(err)
-	}
+func Open() error {
+    var err error
+    db, err = sql.Open("{{ .Driver }}", "{{ .Conn }}")
+    if err != nil {
+        return nil, err
+    }
 
-	db.SetMaxOpenConns(50)
+    if err := db.Ping(); err != nil {
+        return nil, err
+    }
+
+    db.SetMaxOpenConns(50)
+    return db, nil
+}
+
+func Close() error {
+    if db != nil {
+        return db.Close()
+    }
+    return nil
 }

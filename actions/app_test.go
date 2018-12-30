@@ -114,7 +114,7 @@ func TestSetupDb(t *testing.T) {
 		}{
 			{"postgres", false},
 			{"sqlite3", false},
-			{"oracle", true},
+			{"mysql", true},
 		}
 
 		for _, test := range tests {

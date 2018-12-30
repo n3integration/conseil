@@ -29,12 +29,14 @@ USAGE:
    conseil new [command options] [arguments...]
 
 OPTIONS:
-   --framework value  app framework [i.e. echo, gin, iris, ozzo, grpc] (default: "gin")
+   --framework value  app framework [i.e. grpc, iris, ozzo, echo, gin] (default: "gin")
    --host value       ip address to bind (default: "127.0.0.1")
    --port value       local port to bind (default: 8080)
    --migrations       whether or not to include support for database migrations
    --driver value     database driver (default: "postgres")
-   --dep              whether or not to initialize dependency management through dep
+   --repo value       the git module repository (default: "github.com")
+   --dep              whether or not to initialize dependency management using dep
+   --mod              whether or not to initialize dependency management using go modules
    --git              whether or not to initialize git repo
 ```
 
@@ -43,6 +45,8 @@ Once executed, the following project structure is setup:
 ```sh
 .
 |-- .gitignore            (*requires --git)
+|-- go.mod                (*requires --mod)
+|-- go.sum                (*requires --mod)
 |-- Gopkg.lock            (*requires --dep)
 |-- Gopkg.toml            (*requires --dep)
 |-- app.go
@@ -50,6 +54,7 @@ Once executed, the following project structure is setup:
     |-- migrations
     |   |-- 1.down.sql
     |   `-- 1.up.sql
+    |-- migrations.go
     `-- sql.go
 
 3 directories, 7 files
@@ -63,6 +68,8 @@ which includes a single stubbed `/health` endpoint.
 
 If your application requires database migrations, enable the `migrations`
 option. This will setup a `sql/sql.go` file that initializes the database driver.
-It will also create a `sql/migrations` folder that contains skeleton `up` and
-`down` migration templates. Otherwise, the `driver` option is ignored.
+A `sql/migrations.go` is also created that can be invoked at startup to perform the
+database schema migrations. It will also create a `sql/migrations` folder that 
+contains skeleton `up` and `down` migration templates. Otherwise, the `driver` 
+option is ignored.
 

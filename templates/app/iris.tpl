@@ -21,6 +21,6 @@ func main() {
 // Iris Handler
 func health(ctx iris.Context) {
     ctx.JSON(iris.Map{
-    	"status": "OK",
+        "status": "OK",
     })
 }

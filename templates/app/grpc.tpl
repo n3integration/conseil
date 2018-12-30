@@ -2,25 +2,25 @@
 package main
 
 import (
-  "log"
-  "net"
+    "log"
+    "net"
 
-  "google.golang.org/grpc"
+    "google.golang.org/grpc"
 )
 
 func main() {
-  // Create new server
-  srv := grpc.NewServer()
+    // Create new server
+    srv := grpc.NewServer()
 
-  // Register protobuf service with server
-  // pb.RegisterXXXServer(srv, &pb.Server{})
+    // Register protobuf service with server
+    // pb.RegisterXXXServer(srv, &pb.Server{})
 
-  // Now listening on: http://{{ .Host }}:{{ .Port }}
-  lis, err := net.Listen("tcp", net.JoinHostPort("{{ .Host }}", "{{ .Port }}"))
-  if err != nil {
-    log.Fatal(err)
-  }
+    // Now listening on: http://{{ .Host }}:{{ .Port }}
+    lis, err := net.Listen("tcp", net.JoinHostPort("{{ .Host }}", "{{ .Port }}"))
+    if err != nil {
+        log.Fatal(err)
+    }
 
-  // Application started. Press CTRL+C to shut down.
-  srv.Serve(lis)
+    // Application started. Press CTRL+C to shut down.
+    srv.Serve(lis)
 }

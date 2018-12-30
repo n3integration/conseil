@@ -6,7 +6,6 @@ import (
   "net"
 
   "google.golang.org/grpc"
-  "google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -16,14 +15,12 @@ func main() {
   // Register protobuf service with server
   // pb.RegisterXXXServer(srv, &pb.Server{})
 
-  reflection.Register(srv)
-
+  // Now listening on: http://localhost:9000
   lis, err := net.Listen("tcp", net.JoinHostPort("localhost", "9000"))
   if err != nil {
     log.Fatal(err)
   }
 
-  // Now listening on: http://localhost:9000
   // Application started. Press CTRL+C to shut down.
   srv.Serve(lis)
 }
