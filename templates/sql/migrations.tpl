@@ -19,12 +19,12 @@ func RunMigrations() error {
 		return errors.New("database not initialized")
 	}
 
-	if err := db.DB().Ping(); err != nil {
+	if err := db.Ping(); err != nil {
 		return err
 	}
 
 	migrationPath := fmt.Sprintf("file://%s", Migrations)
-	driver, err := {{ .Driver }}.WithInstance(db.DB(), &{{ .Driver }}.Config{})
+	driver, err := {{ .Driver }}.WithInstance(db, &{{ .Driver }}.Config{})
 	m, err := migrate.NewWithDatabaseInstance(migrationPath, dbType, driver)
 	if err != nil {
 		return err

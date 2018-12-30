@@ -1,31 +1,31 @@
 package sql
 
 import (
-  "database/sql"
+    "database/sql"
 
-  _ "github.com/lib/pq"
+    _ "github.com/lib/pq"
 )
 
 var db *sql.DB
 
 func Open() error {
-  var err error
-  db, err = sql.Open("postgres", "postgres://localhost:5432/actions")
-  if err != nil {
-    return nil, err
-  }
+    var err error
+    db, err = sql.Open("postgres", "postgres://localhost:5432/actions")
+    if err != nil {
+        return nil, err
+    }
 
-  if err := db.Ping(); err != nil {
-    return nil, err
-  }
+    if err := db.Ping(); err != nil {
+        return nil, err
+    }
 
-  db.SetMaxOpenConns(50)
-  return db, nil
+    db.SetMaxOpenConns(50)
+    return db, nil
 }
 
 func Close() error {
-  if db != nil {
-    return db.Close()
-  }
-  return nil
+    if db != nil {
+        return db.Close()
+    }
+    return nil
 }
